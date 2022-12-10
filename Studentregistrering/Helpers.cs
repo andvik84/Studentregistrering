@@ -1,7 +1,4 @@
-﻿using Studentregistrering.Data;
-using Studentregistrering.Models;
-
-namespace Studentregistrering
+﻿namespace Studentregistrering
 {
     public static class Helpers
     {

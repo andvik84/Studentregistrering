@@ -1,4 +1,4 @@
-﻿using Studentregistrering.Models;
+﻿using Studentregistrering;
 
 namespace Studentregistrering.UserExperience
 {

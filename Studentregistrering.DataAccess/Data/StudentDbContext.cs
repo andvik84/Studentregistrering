@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Studentregistrering.Models;
+using Studentregistrering;
 
-namespace Studentregistrering.Data
+namespace Studentregistrering.DataAccess.Data
 {
-    internal class StudentDbContext : DbContext
+    public class StudentDbContext : DbContext
     {
 
         public DbSet<Student> Students { get; set; } = null!;

@@ -1,6 +1,6 @@
-﻿namespace Studentregistrering.UserExperience
+﻿namespace Studentregistrering
 {
-    internal interface IMenuOption
+    public interface IMenuOption
     {
         public string SearchableText { get; }
         public string MenuText { get; }

@@ -1,8 +1,8 @@
-﻿using Studentregistrering.UserExperience;
+﻿using Studentregistrering;
 
-namespace Studentregistrering.Models
+namespace Studentregistrering
 {
-    internal class Student : IMenuOption
+    public class Student : IMenuOption
     {
         public int StudentId { get; set; }
         public string FirstName { get; set; } = string.Empty;

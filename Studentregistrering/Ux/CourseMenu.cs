@@ -1,7 +1,4 @@
-﻿using Studentregistrering.Data;
-using Studentregistrering.Models;
-
-namespace Studentregistrering.UserExperience
+﻿namespace Studentregistrering.UserExperience
 {
     internal class CourseMenu : Menu<MenuOption>
     {

@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Studentregistrering.Data;
-using Studentregistrering.Models;
-using System.Runtime.InteropServices;
+using Studentregistrering.DataAccess.Data;
 
 namespace Studentregistrering.UserExperience
 {
@@ -12,7 +10,7 @@ namespace Studentregistrering.UserExperience
         /// </summary>
         /// <param name="student">Ett student-object</param>
         /// <returns>Null = Avsluta utan att spara. Annars ett redigerat studentobject</returns>
-        internal static Student EditStudent(Student student, List<Course> allCourses)
+        internal static Student EditStudent(Student student, IEnumerable<Course> allCourses, StudentRepository studentRepo)
         {
             string firstName = student.FirstName;
             string lastName = student.LastName;
@@ -44,7 +42,7 @@ namespace Studentregistrering.UserExperience
                         city = Helpers.ReadString("Stad: ", clear: true);
                         break;
                     case 3:
-                        EditStudentCourses(student, allCourses);
+                        EditStudentCourses(student, allCourses.ToList());
                         break;
                     case 4:
                         student.FirstName = firstName;
@@ -58,11 +56,7 @@ namespace Studentregistrering.UserExperience
                         Console.WriteLine($"Är det säkert att du vill ta bort {firstName} {lastName}?");
                         if(Helpers.ReadString("Skriv DELETE: ") == "DELETE")
                         {
-                            using ( var dbCtx = new StudentDbContext())
-                            {
-                                dbCtx.Students.Remove(student);
-                                dbCtx.SaveChanges();
-                            }
+                            studentRepo.Delete(student);
                             return null;
                         }
                         break;
@@ -77,6 +71,7 @@ namespace Studentregistrering.UserExperience
                                 new MenuOption("Stad: ".PadRight(15) + city),
                                 new MenuOption("Klasser: ".PadRight(15) + string.Join(", ", courses.Select(c => c.Name))),
                                 new MenuOption("Spara och avsluta"),
+                                new MenuOption("Ta bort student"),
                                 new MenuOption("Avsluta utan att spara")
                             });
             }
@@ -121,31 +116,29 @@ namespace Studentregistrering.UserExperience
         /// <summary>
         /// Visa lista på alla courses -> Visa alla studenter i en course -> Redigera student
         /// </summary>
-        public static void ShowCourses(StudentDbContext dbCtx)
+        public static void ShowCourses(CourseRepository courseRepo, StudentRepository studentRepo)
         {
-            var courses = dbCtx.Courses
-                   .Include(c => c.Students)
-                   .ToList();
+            var courses = courseRepo.GetAllPlusStudents();
             
-
-            var courseMenu = new Menu<Course>(courses, "Klasser");
+            var courseMenu = new Menu<Course>(courses.ToList(), "Klasser");
 
             if (courseMenu.DisplayMenu())
             {
                 var currentCourse = courseMenu.Choices[courseMenu.Choice];
 
-                var students = courses
-                    .Where(c => c.CourseId == currentCourse.CourseId)
-                    .First()
-                    .Students;
+                var students = courseRepo.GetStudentsInCourse(currentCourse.CourseId);
 
-                var courseStudentMenu = new Menu<Student>(students, $"Studenter i klassen {currentCourse.Name}");
+                var courseStudentMenu = new Menu<Student>(students.ToList(), $"Studenter i klassen {currentCourse.Name}");
                 if (courseStudentMenu.DisplayMenu(searchable: true))
                 {
                     Console.Clear();
 
                     var studentToEdit = courseStudentMenu.Choices[courseStudentMenu.Choice];
-                    var updatedStudent = Ux.EditStudent(studentToEdit, dbCtx.Courses.ToList());
+                    var editedStudent = Ux.EditStudent(studentToEdit, courseRepo.GetAll(), studentRepo);
+                    if (editedStudent != null)
+                    {
+                        studentRepo.Update(editedStudent);
+                    }
                 }
 
 

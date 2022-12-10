@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Studentregistrering.Data;
-using Studentregistrering.Models;
+using Studentregistrering.DataAccess.Data;
 using Studentregistrering.UserExperience;
 
 namespace Studentregistrering
@@ -10,6 +9,8 @@ namespace Studentregistrering
         static void Main()
         {
             var dbCtx = new StudentDbContext();
+            var studentRepo = new StudentRepository(dbCtx);
+            var courseRepo = new CourseRepository(dbCtx);
 
             var mainMenu = new Menu<MenuOption>(
                     new List<MenuOption> {
@@ -19,29 +20,27 @@ namespace Studentregistrering
                     new MenuOption("Skapa en ny course"),
                     new MenuOption("Avsluta") },
                     "Det supersnygga studentregistret!");
+
+            Console.WindowHeight = 70;
+
             while (mainMenu.DisplayMenu())
             {
                 switch (mainMenu.Choice)
                 {
                     case 0: // Registrera ny student 
                         var newStudent = new Student();
-                        Ux.EditStudent(newStudent, dbCtx.Courses.ToList());
+                        Ux.EditStudent(newStudent, courseRepo.GetAll(), studentRepo);
                         if (newStudent != null)
                         {
-                            dbCtx.Students.Add(newStudent);
-                            dbCtx.SaveChanges();
+                            studentRepo.Add(newStudent);
                         }
                         break;
 
                     case 1: // Lista alla studenter
 
-                        var students = (dbCtx.Students
-                            .Include(s => s.Courses))
-                            .OrderBy(s => s.LastName)
-                            .ThenBy(s => s.FirstName)
-                            .ToList();
+                        var students = studentRepo.GetAll();
 
-                        Console.WindowHeight = students.Count + 10;
+                        
                         var studentListMenu = new Menu<Student>(students, "Studentlista");
                         if (studentListMenu.DisplayMenu(searchable: true))
                         {
@@ -49,14 +48,16 @@ namespace Studentregistrering
 
                             // Redigera student
                             var studentToEdit = studentListMenu.Choices[studentListMenu.Choice];
-                            Ux.EditStudent(studentToEdit, dbCtx.Courses.ToList());
-                            dbCtx.SaveChanges();
-                            
+                            var editedStudent = Ux.EditStudent(studentToEdit, courseRepo.GetAll(), studentRepo); 
+                            if(editedStudent != null)
+                            {
+                                studentRepo.Update(editedStudent);
+                            }
                         }
                         break;
 
                     case 2: // Visa klasser
-                        Ux.ShowCourses(dbCtx);
+                        Ux.ShowCourses(courseRepo, studentRepo);
                         break;
 
                     case 3: // Skapa ny klass
@@ -70,8 +71,7 @@ namespace Studentregistrering
                             EndDate = Helpers.ReadDateTime("Slut-datum [YYYY-MM-DD]: "),
                         };
 
-                        dbCtx.Courses.Add(newCourse);
-                        dbCtx.SaveChanges();
+                        courseRepo.Add(newCourse);
                         break;
 
                     case 4: // Avsluta
